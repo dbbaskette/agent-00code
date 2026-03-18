@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="900" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f1119"/>
+      <stop offset="100%" stop-color="#1a1d2e"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6c8fff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#6c8fff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="orb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6c8fff" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#6c8fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="bigglow">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="260" rx="12" fill="url(#bg)"/>
+
+  <!-- Subtle border -->
+  <rect width="900" height="260" rx="12" fill="none" stroke="#6c8fff" stroke-opacity="0.2" stroke-width="1"/>
+
+  <!-- Ambient glow orbs -->
+  <circle cx="120" cy="130" r="140" fill="url(#orb)"/>
+  <circle cx="780" cy="130" r="100" fill="url(#orb)" opacity="0.5"/>
+
+  <!-- Grid lines (subtle tech feel) -->
+  <g stroke="#6c8fff" stroke-opacity="0.04" stroke-width="1">
+    <line x1="0" y1="65" x2="900" y2="65"/>
+    <line x1="0" y1="130" x2="900" y2="130"/>
+    <line x1="0" y1="195" x2="900" y2="195"/>
+    <line x1="225" y1="0" x2="225" y2="260"/>
+    <line x1="450" y1="0" x2="450" y2="260"/>
+    <line x1="675" y1="0" x2="675" y2="260"/>
+  </g>
+
+  <!-- Robot icon (scaled from favicon) -->
+  <g transform="translate(68, 78) scale(3.2)">
+    <!-- Robot head body -->
+    <rect x="8" y="11" width="16" height="12" rx="3" fill="#6c8fff" opacity="0.15" stroke="#6c8fff" stroke-width="1.2"/>
+    <!-- Eyes -->
+    <rect x="11" y="14.5" width="3.5" height="3" rx="1" fill="#6c8fff"/>
+    <rect x="17.5" y="14.5" width="3.5" height="3" rx="1" fill="#6c8fff"/>
+    <!-- Mouth / status bar -->
+    <rect x="11.5" y="20" width="9" height="1.5" rx="0.75" fill="#6c8fff" opacity="0.7"/>
+    <!-- Antenna -->
+    <line x1="16" y1="11" x2="16" y2="7.5" stroke="#6c8fff" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="16" cy="6.5" r="1.5" fill="#6c8fff"/>
+    <circle cx="16" cy="6.5" r="1.5" fill="#8aabff" opacity="0.4"/>
+  </g>
+
+  <!-- Glow behind robot -->
+  <circle cx="120" cy="130" r="36" fill="#6c8fff" opacity="0.06" filter="url(#bigglow)"/>
+
+  <!-- Title text -->
+  <text x="200" y="118" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="52" font-weight="700" fill="#e8ecf4" letter-spacing="-1">
+    Agent
+    <tspan fill="#6c8fff"> 00</tspan><tspan fill="#e8ecf4">Code</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="203" y="152" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="16" fill="#8a94a8" letter-spacing="0.5">
+    Autonomous AI Agent  |  Spring AI  |  MCP Tools
+  </text>
+
+  <!-- Decorative status indicators -->
+  <g transform="translate(200, 175)">
+    <!-- Status pill: ReAct Loop -->
+    <rect x="0" y="0" width="110" height="26" rx="13" fill="#6c8fff" opacity="0.1" stroke="#6c8fff" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="16" cy="13" r="4" fill="#6c8fff" filter="url(#softglow)"/>
+    <text x="28" y="17.5" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="11" fill="#6c8fff">ReAct Loop</text>
+
+    <!-- Status pill: MCP -->
+    <rect x="124" y="0" width="68" height="26" rx="13" fill="#6c8fff" opacity="0.1" stroke="#6c8fff" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="140" cy="13" r="4" fill="#4ade80" filter="url(#softglow)"/>
+    <text x="152" y="17.5" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="11" fill="#8a94a8">MCP</text>
+
+    <!-- Status pill: WebSocket -->
+    <rect x="206" y="0" width="108" height="26" rx="13" fill="#6c8fff" opacity="0.1" stroke="#6c8fff" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="222" cy="13" r="4" fill="#4ade80" filter="url(#softglow)"/>
+    <text x="234" y="17.5" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="11" fill="#8a94a8">WebSocket</text>
+
+    <!-- Status pill: OAuth2 -->
+    <rect x="328" y="0" width="90" height="26" rx="13" fill="#6c8fff" opacity="0.1" stroke="#6c8fff" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="344" cy="13" r="4" fill="#4ade80" filter="url(#softglow)"/>
+    <text x="356" y="17.5" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="11" fill="#8a94a8">OAuth2</text>
+  </g>
+
+  <!-- Decorative code snippet (right side) -->
+  <g transform="translate(640, 70)" opacity="0.35">
+    <text font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="12" fill="#6c8fff">
+      <tspan x="0" dy="0">```yaml mcp-servers</tspan>
+      <tspan x="0" dy="18" fill="#8a94a8">- name: github</tspan>
+      <tspan x="0" dy="18" fill="#8a94a8">  url: mcp://...</tspan>
+      <tspan x="0" dy="18" fill="#8a94a8">  auth: oauth</tspan>
+      <tspan x="0" dy="18" fill="#6c8fff">```</tspan>
+    </text>
+  </g>
+  <g transform="translate(640, 168)" opacity="0.25">
+    <text font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="12" fill="#6c8fff">
+      <tspan x="0" dy="0">```yaml loop-config</tspan>
+      <tspan x="0" dy="18" fill="#8a94a8">max_iterations: 10</tspan>
+      <tspan x="0" dy="18" fill="#8a94a8">loop_interval: 3600</tspan>
+      <tspan x="0" dy="18" fill="#6c8fff">```</tspan>
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,25 @@
+---
+applications:
+  - name: agent-00code
+    memory: 1G
+    disk_quota: 512M
+    instances: 1
+    path: target/agent-00code-0.1.0.jar
+    buildpacks:
+      - java_buildpack
+    env:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+      JAVA_OPTS: '-Djava.security.egd=file:///dev/urandom'
+    processes:
+      - type: web
+        command: java -jar target/agent-00code-0.1.0.jar
+        health-check-type: http
+        health-check-http-endpoint: /actuator/health
+        instances: 1
+        memory: 1G
+      - type: worker
+        command: java -jar target/agent-00code-0.1.0.jar --spring.main.web-application-type=none
+        health-check-type: process
+        instances: 1
+        memory: 512M
+        no-route: true

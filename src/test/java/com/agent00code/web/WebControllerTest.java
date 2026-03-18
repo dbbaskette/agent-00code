@@ -50,7 +50,7 @@ class WebControllerTest {
     @Test
     void authLoginRedirects() throws Exception {
         McpServerConfig server = new McpServerConfig(
-                "jira", "https://mcp.example.com/jira/mcp", "oauth", List.of("read"));
+                "jira", "https://mcp.example.com/jira/mcp", "oauth", null, List.of("read"));
         when(agentConfig.mcpServers()).thenReturn(List.of(server));
 
         mockMvc.perform(get("/auth/login/jira"))

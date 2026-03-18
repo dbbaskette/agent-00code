@@ -1,4 +1,6 @@
 .env
+mcp-servers.local.yml
+deploy/
 
 # Java / Maven
 target/

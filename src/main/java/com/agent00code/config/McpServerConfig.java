@@ -6,6 +6,7 @@ public record McpServerConfig(
         String name,
         String url,
         String auth,
+        String token,
         List<String> scopes
 ) {
     public McpServerConfig {

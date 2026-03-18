@@ -1,0 +1,8 @@
+# Local MCP server definitions (not tracked by git).
+# Copy this file to mcp-servers.local.yml and fill in your values.
+# These servers are merged with any servers defined in AGENTS.md.
+
+- name: my-server
+  url: https://mcp.example.com/mcp
+  auth: token
+  token: ${MY_MCP_TOKEN}

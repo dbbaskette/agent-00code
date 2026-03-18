@@ -1,5 +1,6 @@
 package com.agent00code.web;
 
+import com.agent00code.config.AgentConfig;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.slf4j.Logger;
@@ -17,9 +18,16 @@ public class ToolsController {
     private static final Logger log = LoggerFactory.getLogger(ToolsController.class);
 
     private final List<McpSyncClient> mcpSyncClients;
+    private final AgentConfig agentConfig;
 
-    public ToolsController(List<McpSyncClient> mcpSyncClients) {
+    public ToolsController(List<McpSyncClient> mcpSyncClients, AgentConfig agentConfig) {
         this.mcpSyncClients = mcpSyncClients;
+        this.agentConfig = agentConfig;
+    }
+
+    @GetMapping("/personality")
+    public Map<String, String> personality() {
+        return Map.of("system_prompt", agentConfig.systemPrompt());
     }
 
     @GetMapping("/tools")

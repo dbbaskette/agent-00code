@@ -58,10 +58,18 @@ public class McpClientAutoConfiguration {
     }
 
     private McpSyncClient createClient(McpServerConfig server) {
-        var transport = HttpClientStreamableHttpTransport.builder(server.url())
-                .clientBuilder(HttpClient.newBuilder())
-                .build();
+        var transportBuilder = HttpClientStreamableHttpTransport.builder(server.url())
+                .clientBuilder(HttpClient.newBuilder());
 
+        if ("token".equalsIgnoreCase(server.auth()) && server.token() != null) {
+            String resolvedToken = resolveToken(server.token());
+            String authHeader = resolvedToken.regionMatches(true, 0, "Bearer ", 0, 7)
+                    ? resolvedToken : "Bearer " + resolvedToken;
+            transportBuilder.customizeRequest(req ->
+                    req.header("Authorization", authHeader));
+        }
+
+        var transport = transportBuilder.build();
         var clientInfo = new McpSchema.Implementation("agent-00code", "0.1.0");
 
         McpSyncClient client = McpClient.sync(transport)
@@ -71,5 +79,21 @@ public class McpClientAutoConfiguration {
 
         client.initialize();
         return client;
+    }
+
+    /**
+     * Resolves a token value. If the value starts with {@code ${} and ends with {@code }},
+     * it is treated as an environment variable reference (e.g. {@code ${MY_TOKEN}}).
+     */
+    private String resolveToken(String token) {
+        if (token.startsWith("${") && token.endsWith("}")) {
+            String envVar = token.substring(2, token.length() - 1);
+            String value = System.getenv(envVar);
+            if (value == null || value.isBlank()) {
+                throw new IllegalStateException("Environment variable '" + envVar + "' is not set");
+            }
+            return value;
+        }
+        return token;
     }
 }

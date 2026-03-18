@@ -74,6 +74,41 @@ public final class AgentConfigParser {
                         (String) m.get("name"),
                         (String) m.get("url"),
                         (String) m.getOrDefault("auth", "none"),
+                        (String) m.getOrDefault("token", null),
+                        scopes
+                ));
+            }
+        }
+        return Collections.unmodifiableList(servers);
+    }
+
+    /**
+     * Parses a standalone YAML file containing a list of MCP server definitions.
+     */
+    public static List<McpServerConfig> parseMcpServersYaml(Path path) throws IOException {
+        return parseMcpServersYaml(Files.readString(path));
+    }
+
+    /**
+     * Parses raw YAML content containing a list of MCP server definitions.
+     */
+    @SuppressWarnings("unchecked")
+    public static List<McpServerConfig> parseMcpServersYaml(String yamlContent) {
+        Object raw = new Yaml().load(yamlContent);
+        if (!(raw instanceof List<?> list)) return List.of();
+
+        List<McpServerConfig> servers = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> map) {
+                Map<String, Object> m = (Map<String, Object>) map;
+                List<String> scopes = m.containsKey("scopes") && m.get("scopes") instanceof List<?>
+                        ? ((List<?>) m.get("scopes")).stream().map(Object::toString).toList()
+                        : List.of();
+                servers.add(new McpServerConfig(
+                        (String) m.get("name"),
+                        (String) m.get("url"),
+                        (String) m.getOrDefault("auth", "none"),
+                        (String) m.getOrDefault("token", null),
                         scopes
                 ));
             }

@@ -374,6 +374,32 @@
     .empty-state .icon { font-size: 40px; }
     .empty-state p { font-size: 14px; }
 
+    /* ── Personality card ── */
+    .personality-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      max-width: 640px;
+      width: 100%;
+      margin-top: 16px;
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+    .personality-card .personality-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .personality-card .md-content {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
     /* ── Auth banner ── */
     #auth-banner {
       display: none;
@@ -539,6 +565,10 @@
       <div class="empty-state" id="empty-state">
         <div class="icon">🤖</div>
         <p>Send a message to start the agent.</p>
+        <div class="personality-card" id="personality-card" style="display:none">
+          <div class="personality-label">Agent Personality</div>
+          <div class="md-content" id="personality-content"></div>
+        </div>
       </div>
     </div>
     <div id="input-row">
@@ -692,6 +722,17 @@
   fetch('/tools').then(r => r.json()).then(renderTools).catch(() => {
     toolsList.innerHTML = '<div style="padding:16px;font-size:13px;color:var(--text-dim)">Failed to load tools.</div>';
   });
+
+  // ── Load personality ────────────────────────────────────────────────────
+  fetch('/personality').then(r => r.json()).then(data => {
+    if (data.system_prompt) {
+      const card = document.getElementById('personality-card');
+      const contentEl = document.getElementById('personality-content');
+      // system_prompt is server-owned content from AGENTS.md, safe to render as markdown
+      contentEl.innerHTML = renderMarkdown(data.system_prompt); // trusted source: own server config
+      card.style.display = '';
+    }
+  }).catch(() => {});
 
   // ── Tool modal ────────────────────────────────────────────────────────────
   function showToolModal(t) {

@@ -83,6 +83,13 @@ public class ScheduledLoopRunner {
         log.info("Agent observer disconnected ({} subscriber(s))", subscribers.size());
     }
 
+    /**
+     * Triggers an immediate agent run. Can be called from HTTP endpoints or the scheduler.
+     */
+    public void triggerRun() {
+        scheduler.submit(this::executeRun);
+    }
+
     private void executeRun() {
         runCount++;
         int currentRun = runCount;

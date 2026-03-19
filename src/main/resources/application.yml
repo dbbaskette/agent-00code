@@ -5,10 +5,12 @@ spring:
   ai:
     openai:
       api-key: ${LLM_API_KEY:}
-      base-url: ${LLM_BASE_URL:https://api.openai.com/v1}
+      base-url: ${LLM_BASE_URL:https://api.openai.com}
+      connect-timeout: 10s
+      read-timeout: 60s
       chat:
         options:
-          model: ${LLM_MODEL:gpt-4o}
+          model: ${LLM_MODEL:gpt-5-nano}
     mcp:
       client:
         enabled: false
@@ -29,3 +31,5 @@ logging:
   level:
     com.agent00code: INFO
     org.springframework.ai: INFO
+    org.springframework.ai.openai: DEBUG
+    org.springaicommunity.tool: DEBUG

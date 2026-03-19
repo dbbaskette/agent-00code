@@ -75,6 +75,24 @@
             <version>${spring-ai-agent-utils.version}</version>
         </dependency>
 
+        <!-- Tool Search: dynamic tool discovery via Lucene -->
+        <dependency>
+            <groupId>org.springaicommunity</groupId>
+            <artifactId>tool-search-tool</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springaicommunity</groupId>
+            <artifactId>tool-searcher-lucene</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <!-- Jackson 2 core — needed by tool-search-tool for TypeReference -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.18.3</version>
+        </dependency>
+
         <!-- YAML parsing for AGENTS.md -->
         <dependency>
             <groupId>org.yaml</groupId>

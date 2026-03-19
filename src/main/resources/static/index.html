@@ -81,6 +81,78 @@
       text-overflow: ellipsis;
     }
 
+    /* ── Sidebar config sections ── */
+    .sidebar-section {
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-section-header {
+      padding: 12px 16px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .sidebar-section-header::before {
+      content: '\25B6';
+      font-size: 8px;
+      transition: transform .15s;
+      color: var(--text-dim);
+    }
+    .sidebar-section-header.open::before {
+      transform: rotate(90deg);
+    }
+    .sidebar-section-body {
+      display: none;
+      padding: 0 14px 10px;
+    }
+    .sidebar-section-body.open {
+      display: block;
+    }
+    .config-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+    .config-card .config-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .config-card .config-row {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      display: flex;
+      gap: 6px;
+    }
+    .config-card .config-row .config-key {
+      color: var(--text-dim);
+      min-width: 50px;
+      flex-shrink: 0;
+    }
+    .config-card .config-row .config-val {
+      color: var(--text);
+      word-break: break-all;
+    }
+    .config-status-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .config-status-dot.active { background: var(--green); }
+    .config-status-dot.inactive { background: var(--text-dim); }
+
     /* ── Tool detail modal ── */
     #tool-modal {
       display: none;
@@ -354,7 +426,20 @@
       align-items: center;
       gap: 10px;
     }
-    #runs-header h1 { font-size: 17px; font-weight: 700; }
+    #runs-header h1 { font-size: 17px; font-weight: 700; flex: 1; }
+    #run-now-btn {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    #run-now-btn:hover { opacity: .85; }
+    #run-now-btn:disabled { opacity: .4; cursor: not-allowed; }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -526,6 +611,18 @@
 <aside id="sidebar">
   <div id="sidebar-header">Available Tools <span id="tool-count" style="color:var(--text);margin-left:4px"></span></div>
   <div id="tools-list"><div style="padding:16px;font-size:13px;color:var(--text-dim)">Loading tools…</div></div>
+  <div class="sidebar-section" id="mcp-section">
+    <div class="sidebar-section-header open" id="mcp-section-toggle">MCP Servers</div>
+    <div class="sidebar-section-body open" id="mcp-section-body">
+      <div style="font-size:12px;color:var(--text-dim)">Loading…</div>
+    </div>
+  </div>
+  <div class="sidebar-section" id="loop-section">
+    <div class="sidebar-section-header open" id="loop-section-toggle">Loop Config</div>
+    <div class="sidebar-section-body open" id="loop-section-body">
+      <div style="font-size:12px;color:var(--text-dim)">Loading…</div>
+    </div>
+  </div>
 </aside>
 
 <!-- Tool detail modal -->
@@ -581,6 +678,7 @@
   <div class="tab-panel" id="panel-runs">
     <div id="runs-header">
       <h1>Scheduled Runs</h1>
+      <button id="run-now-btn">Run Now</button>
     </div>
     <div class="messages-area" id="runs-messages">
       <div class="empty-state" id="runs-empty">
@@ -726,10 +824,15 @@
   // ── Load personality ────────────────────────────────────────────────────
   fetch('/personality').then(r => r.json()).then(data => {
     if (data.system_prompt) {
+      // Strip residual section headers for MCP Servers / Loop Config (config is shown in sidebar)
+      let prompt = data.system_prompt
+        .replace(/## MCP Servers[\s\S]*$/m, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
       const card = document.getElementById('personality-card');
       const contentEl = document.getElementById('personality-content');
       // system_prompt is server-owned content from AGENTS.md, safe to render as markdown
-      contentEl.innerHTML = renderMarkdown(data.system_prompt); // trusted source: own server config
+      contentEl.innerHTML = renderMarkdown(prompt); // trusted source: own server config
       card.style.display = '';
     }
   }).catch(() => {});
@@ -916,6 +1019,100 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  // ── Run Now button ─────────────────────────────────────────────────────
+  const runNowBtn = document.getElementById('run-now-btn');
+  runNowBtn.addEventListener('click', () => {
+    runNowBtn.disabled = true;
+    runNowBtn.textContent = 'Triggering…';
+    fetch('/run', { method: 'POST' })
+      .then(r => r.json())
+      .then(() => {
+        runNowBtn.textContent = 'Triggered';
+        // Switch to the Live Runs tab
+        document.querySelector('.tab-btn[data-tab="runs"]').click();
+        setTimeout(() => {
+          runNowBtn.disabled = false;
+          runNowBtn.textContent = 'Run Now';
+        }, 3000);
+      })
+      .catch(() => {
+        runNowBtn.textContent = 'Failed';
+        setTimeout(() => {
+          runNowBtn.disabled = false;
+          runNowBtn.textContent = 'Run Now';
+        }, 2000);
+      });
+  });
+
+  // ── Sidebar section toggles ───────────────────────────────────────────
+  document.querySelectorAll('.sidebar-section-header').forEach(header => {
+    header.addEventListener('click', () => {
+      header.classList.toggle('open');
+      header.nextElementSibling.classList.toggle('open');
+    });
+  });
+
+  // ── Config panel ──────────────────────────────────────────────────────
+  fetch('/config').then(r => r.json()).then(data => {
+    const mcpBody = document.getElementById('mcp-section-body');
+    const loopBody = document.getElementById('loop-section-body');
+
+    // MCP Servers — all values escaped via esc()
+    const servers = data.mcp_servers || [];
+    if (servers.length === 0) {
+      mcpBody.textContent = 'No MCP servers configured.';
+    } else {
+      mcpBody.textContent = '';
+      servers.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'config-card';
+        const scopes = (s.scopes || []).length > 0
+          ? s.scopes.map(sc => esc(sc)).join(', ')
+          : 'none';
+        // All dynamic values are HTML-escaped via esc() — server-owned config data
+        card.innerHTML = `
+          <div class="config-label"><span class="config-status-dot active"></span>${esc(s.name)}</div>
+          <div class="config-row"><span class="config-key">URL</span><span class="config-val">${esc(s.url)}</span></div>
+          <div class="config-row"><span class="config-key">Auth</span><span class="config-val">${esc(s.auth)}</span></div>
+          <div class="config-row"><span class="config-key">Scopes</span><span class="config-val">${scopes}</span></div>`;
+        mcpBody.appendChild(card);
+      });
+    }
+
+    // Loop Config — all dynamic values escaped via esc()
+    const loop = data.loop || {};
+    const intervalDisplay = loop.loop_interval_seconds > 0
+      ? formatInterval(loop.loop_interval_seconds)
+      : 'one-shot (no repeat)';
+    const promptPreview = (loop.initial_prompt || '').length > 120
+      ? loop.initial_prompt.substring(0, 120) + '…'
+      : (loop.initial_prompt || 'none');
+
+    const loopCard = document.createElement('div');
+    loopCard.className = 'config-card';
+    loopCard.innerHTML = `
+      <div class="config-row"><span class="config-key">Interval</span><span class="config-val">${esc(intervalDisplay)}</span></div>
+      <div class="config-row"><span class="config-key">Max Iter</span><span class="config-val">${esc(String(loop.max_iterations || 'default'))}</span></div>
+      <div class="config-row" style="align-items:flex-start"><span class="config-key">Prompt</span><span class="config-val">${esc(promptPreview)}</span></div>`;
+    loopBody.textContent = '';
+    loopBody.appendChild(loopCard);
+  }).catch(() => {
+    document.getElementById('mcp-section-body').textContent = 'Failed to load config.';
+    document.getElementById('loop-section-body').textContent = 'Failed to load config.';
+  });
+
+  function formatInterval(seconds) {
+    if (seconds >= 3600) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      return m > 0 ? h + 'h ' + m + 'm' : h + 'h';
+    }
+    if (seconds >= 60) {
+      return Math.floor(seconds / 60) + 'm';
+    }
+    return seconds + 's';
   }
 </script>
 </body>

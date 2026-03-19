@@ -16,7 +16,9 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Creates MCP clients programmatically from the AGENTS.md configuration.
@@ -54,7 +56,23 @@ public class McpClientAutoConfiguration {
         if (mcpSyncClients.isEmpty()) {
             return () -> new ToolCallback[0];
         }
-        return new SyncMcpToolCallbackProvider(mcpSyncClients);
+        // Wrap SyncMcpToolCallbackProvider to deduplicate tools by name.
+        // Multiple MCP servers (AGENTS.md + local overrides) may expose the same tool names.
+        SyncMcpToolCallbackProvider delegate = new SyncMcpToolCallbackProvider(mcpSyncClients);
+        return () -> {
+            ToolCallback[] all = delegate.getToolCallbacks();
+            Map<String, ToolCallback> deduped = new LinkedHashMap<>();
+            for (ToolCallback tc : all) {
+                String name = tc.getToolDefinition().name();
+                if (deduped.putIfAbsent(name, tc) != null) {
+                    log.debug("Skipping duplicate tool '{}'", name);
+                }
+            }
+            if (deduped.size() < all.length) {
+                log.info("Deduplicated MCP tools: {} -> {} unique", all.length, deduped.size());
+            }
+            return deduped.values().toArray(new ToolCallback[0]);
+        };
     }
 
     private McpSyncClient createClient(McpServerConfig server) {

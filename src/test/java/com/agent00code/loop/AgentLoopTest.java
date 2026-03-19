@@ -2,13 +2,13 @@ package com.agent00code.loop;
 
 import com.agent00code.loop.LoopEvent.EventType;
 import org.junit.jupiter.api.Test;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springaicommunity.tool.search.ToolSearcher;
 
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,8 +33,7 @@ class AgentLoopTest {
         when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class)))
                 .thenReturn(response);
 
-        ChatClient.Builder builder = ChatClient.builder(chatModel);
-        AgentLoop loop = new AgentLoop(builder, emptyProvider(), List.of());
+        AgentLoop loop = new AgentLoop(chatModel, emptyProvider(), List.of(), mock(ToolSearcher.class));
 
         LoopResult result = loop.run(
                 "You are helpful.",
@@ -56,8 +55,7 @@ class AgentLoopTest {
         when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class)))
                 .thenReturn(response);
 
-        ChatClient.Builder builder = ChatClient.builder(chatModel);
-        AgentLoop loop = new AgentLoop(builder, emptyProvider(), List.of());
+        AgentLoop loop = new AgentLoop(chatModel, emptyProvider(), List.of(), mock(ToolSearcher.class));
 
         LinkedBlockingQueue<LoopEvent> queue = new LinkedBlockingQueue<>();
         LoopResult result = loop.run("sys", "go", 50, queue);

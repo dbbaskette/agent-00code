@@ -3,7 +3,10 @@ package com.agent00code.web;
 import com.agent00code.config.AgentConfig;
 import com.agent00code.config.LoopConfig;
 import com.agent00code.config.McpServerConfig;
+import com.agent00code.loop.ScheduledLoopRunner;
 import io.modelcontextprotocol.client.McpSyncClient;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -27,6 +30,15 @@ class WebControllerTest {
 
     @MockitoBean
     private AgentConfig agentConfig;
+
+    @MockitoBean
+    private ScheduledLoopRunner loopRunner;
+
+    @MockitoBean
+    private ChatClient.Builder chatClientBuilder;
+
+    @MockitoBean
+    private ToolCallbackProvider mcpToolCallbackProvider;
 
     @Test
     void toolsEndpointEmpty() throws Exception {

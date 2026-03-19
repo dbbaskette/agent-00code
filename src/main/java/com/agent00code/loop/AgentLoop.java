@@ -4,10 +4,13 @@ import com.agent00code.loop.LoopEvent.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springaicommunity.tool.search.ToolSearchToolCallAdvisor;
+import org.springaicommunity.tool.search.ToolSearcher;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -16,39 +19,31 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * ReAct-style agentic loop: think -> act -> observe -> repeat.
+ * ReAct-style agentic loop with dynamic tool search.
  * <p>
- * Uses Spring AI's {@link ChatClient} with tool callbacks. Events are emitted
- * onto an optional {@link BlockingQueue} so both the background runner and the
- * web chat UI can consume them in real time.
- * <p>
- * Accepts both the MCP {@link ToolCallbackProvider} and individual tool beans
- * (SkillsTool, TodoWriteTool), combining them in the ChatClient.
+ * Uses {@link ToolSearchToolCallAdvisor} so the LLM discovers tools via search
+ * rather than receiving all definitions up front.
  */
 @Component
 public class AgentLoop {
 
     private static final Logger log = LoggerFactory.getLogger(AgentLoop.class);
 
-    private final ChatClient.Builder chatClientBuilder;
+    private final ChatModel chatModel;
     private final ToolCallbackProvider mcpToolCallbackProvider;
     private final ToolCallback[] additionalTools;
+    private final ToolSearcher toolSearcher;
 
-    public AgentLoop(ChatClient.Builder chatClientBuilder,
+    public AgentLoop(ChatModel chatModel,
                      ToolCallbackProvider mcpToolCallbackProvider,
-                     List<ToolCallback> toolCallbacks) {
-        this.chatClientBuilder = chatClientBuilder;
+                     List<ToolCallback> toolCallbacks,
+                     ToolSearcher toolSearcher) {
+        this.chatModel = chatModel;
         this.mcpToolCallbackProvider = mcpToolCallbackProvider;
         this.additionalTools = toolCallbacks != null ? toolCallbacks.toArray(new ToolCallback[0]) : new ToolCallback[0];
+        this.toolSearcher = toolSearcher;
     }
 
-    /**
-     * Run the agentic loop for a single user prompt.
-     * <p>
-     * Spring AI's ChatClient handles tool call execution internally when
-     * tool callbacks are registered. We run in a simple request-response loop
-     * to support the max_iterations cap and event emission.
-     */
     public LoopResult run(String systemPrompt,
                           String userPrompt,
                           int maxIterations,
@@ -61,11 +56,28 @@ public class AgentLoop {
         log.info("Starting loop with {} tool(s) ({} MCP + {} additional), max_iterations={}",
                 totalTools, mcpTools.length, additionalTools.length, maxIterations);
 
-        ChatClient chatClient = chatClientBuilder
-                .defaultSystem(systemPrompt)
-                .defaultToolCallbacks(mcpToolCallbackProvider)
-                .defaultToolCallbacks(additionalTools)
+        // Build a FRESH ChatClient from the ChatModel directly — not the auto-configured
+        // builder which has tools pre-loaded and would cause duplicates.
+        // Pattern from: https://spring.io/blog/2025/12/11/spring-ai-tool-search-tools-tzolov
+        var advisor = ToolSearchToolCallAdvisor.builder()
+                .toolSearcher(toolSearcher)
                 .build();
+
+        // Combine all tools
+        ToolCallback[] allTools = new ToolCallback[mcpTools.length + additionalTools.length];
+        System.arraycopy(mcpTools, 0, allTools, 0, mcpTools.length);
+        System.arraycopy(additionalTools, 0, allTools, mcpTools.length, additionalTools.length);
+
+        // Register tools via defaultToolCallbacks + advisor handles search/discovery
+        var clientBuilder = ChatClient.builder(chatModel)
+                .defaultSystem(systemPrompt);
+
+        if (allTools.length > 0) {
+            clientBuilder.defaultToolCallbacks(allTools)
+                    .defaultAdvisors(advisor);
+        }
+
+        ChatClient chatClient = clientBuilder.build();
 
         for (int i = 1; i <= maxIterations; i++) {
             final int iteration = i;
@@ -130,7 +142,6 @@ public class AgentLoop {
             }
         }
 
-        // Reached max iterations — ask for summary
         log.warn("Reached max iterations ({}), requesting summary", maxIterations);
         try {
             String summary = chatClient.prompt()

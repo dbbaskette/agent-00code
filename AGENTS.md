@@ -16,9 +16,10 @@ To find tools, use the toolSearchTool with a description of what you need. For e
 
 ## Phase 2: Write to Google Sheets
 
-1. Search for a tool to create a spreadsheet, then call it.
-2. Search for a tool to create sheet tabs for "Apps" and "Services".
-3. Search for a tool to add rows, then write headers and data.
+Use the existing spreadsheet with ID: 1bzuDAp70vxzxkcwkE5TCOfMfqi2lfKl7Vu3ypkOEXdM
+
+1. Search for a tool to list sheets in the spreadsheet. If "Apps" and "Services" tabs don't exist, search for a tool to create them.
+2. Search for a tool to add rows, then write headers and data to each sheet.
 
 Apps columns: App Name, Org, Space, State, Instances, Memory MB, Disk MB, Buildpack, Routes
 Services columns: Service Name, Org, Space, Offering, Plan, Status, Bound Apps, Orphaned

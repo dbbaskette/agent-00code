@@ -67,8 +67,8 @@ public class AgentLoop {
         // Build fresh ChatClient with tools + ToolSearchToolCallAdvisor + event emitting
         var advisor = ToolSearchToolCallAdvisor.builder()
                 .toolSearcher(toolSearcher)
-                .referenceToolNameAccumulation(false)
-                .maxResults(3)
+                .referenceToolNameAccumulation(true)
+                .maxResults(5)
                 .build();
 
         var clientBuilder = ChatClient.builder(chatModel)
@@ -82,6 +82,7 @@ public class AgentLoop {
 
         ChatClient chatClient = clientBuilder.build();
 
+        int consecutiveErrors = 0;
         for (int i = 1; i <= maxIterations; i++) {
             final int iteration = i;
             emit(events, eventQueue, new LoopEvent(
@@ -144,13 +145,24 @@ public class AgentLoop {
                 });
 
             } catch (Exception e) {
-                log.error("Error in iteration {}: {}", iteration, e.getMessage(), e);
+                consecutiveErrors++;
+                log.error("Error in iteration {} (consecutive: {}): {}", iteration, consecutiveErrors, e.getMessage(), e);
                 emit(events, eventQueue, new LoopEvent(
                         EventType.ERROR,
                         Map.of("error", e.getMessage()),
                         iteration));
-                return new LoopResult("Error: " + e.getMessage(), iteration, events);
+                if (consecutiveErrors >= 3) {
+                    log.error("Aborting after {} consecutive errors", consecutiveErrors);
+                    emit(events, eventQueue, new LoopEvent(
+                            EventType.FINAL_ANSWER,
+                            Map.of("text", "Aborted after " + consecutiveErrors + " consecutive errors: " + e.getMessage()),
+                            iteration));
+                    return new LoopResult("Aborted: " + e.getMessage(), iteration, events);
+                }
+                log.info("Retrying on next iteration...");
+                continue;
             }
+            consecutiveErrors = 0; // reset on success
         }
 
         log.warn("Reached max iterations ({}), requesting summary", maxIterations);

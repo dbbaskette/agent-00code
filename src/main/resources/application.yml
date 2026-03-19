@@ -3,7 +3,7 @@ server:
 
 spring:
   autoconfigure:
-    exclude: org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+    exclude: ${EXCLUDE_AUTOCONFIG:org.springframework.ai.model.google.genai.autoconfigure.chat.GoogleGenAiChatAutoConfiguration}
   ai:
     openai:
       api-key: ${LLM_API_KEY:}
@@ -16,7 +16,7 @@ spring:
         api-key: ${GOOGLE_API_KEY:}
         chat:
           options:
-            model: ${GOOGLE_MODEL:gemini-3.1-flash-lite-preview}
+            model: ${GOOGLE_MODEL:}
     mcp:
       client:
         enabled: false

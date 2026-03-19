@@ -83,6 +83,8 @@ public class AgentLoop {
         ChatClient chatClient = clientBuilder.build();
 
         int consecutiveErrors = 0;
+        StringBuilder completedWork = new StringBuilder();
+
         for (int i = 1; i <= maxIterations; i++) {
             final int iteration = i;
             emit(events, eventQueue, new LoopEvent(
@@ -93,12 +95,21 @@ public class AgentLoop {
             log.info("Iteration {}/{}", iteration, maxIterations);
 
             try {
-                log.info("Sending prompt to LLM (advisor will handle tool search + execution)...");
+                String prompt;
+                if (iteration == 1) {
+                    prompt = userPrompt;
+                } else {
+                    prompt = "You previously completed this work:\n" + completedWork +
+                            "\n\nContinue with the NEXT org that has NOT been scanned yet. " +
+                            "Do NOT repeat orgs already done. Do NOT ask for confirmation. " +
+                            "Call the next tool immediately.";
+                }
+
+                log.info("Sending prompt to LLM (iteration {})...", iteration);
                 ChatResponse response;
                 try {
                     response = chatClient.prompt()
-                            .user(iteration == 1 ? userPrompt :
-                                    "Continue immediately. Call the next tool now. Do not ask for confirmation.")
+                            .user(prompt)
                             .call()
                             .chatResponse();
                 } catch (Exception inner) {
@@ -129,12 +140,19 @@ public class AgentLoop {
                         && !generation.getOutput().getToolCalls().isEmpty();
 
                 if (!hasToolCalls) {
-                    String finalText = content != null ? content : "";
+                    // Not done — the LLM just finished one batch (e.g. one org)
+                    // Record what was done and continue to next iteration
+                    if (content != null && !content.isBlank()) {
+                        completedWork.append("- Iteration ").append(iteration).append(": ")
+                                .append(content.length() > 200 ? content.substring(0, 200) + "..." : content)
+                                .append("\n");
+                    }
                     emit(events, eventQueue, new LoopEvent(
-                            EventType.FINAL_ANSWER,
-                            Map.of("text", finalText),
+                            EventType.THOUGHT,
+                            Map.of("text", "Iteration " + iteration + " complete. Continuing..."),
                             iteration));
-                    return new LoopResult(finalText, iteration, events);
+                    // Continue to next iteration — don't return
+                    continue;
                 }
 
                 generation.getOutput().getToolCalls().forEach(tc -> {

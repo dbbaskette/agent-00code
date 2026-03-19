@@ -611,6 +611,12 @@
 <aside id="sidebar">
   <div id="sidebar-header">Available Tools <span id="tool-count" style="color:var(--text);margin-left:4px"></span></div>
   <div id="tools-list"><div style="padding:16px;font-size:13px;color:var(--text-dim)">Loading tools…</div></div>
+  <div class="sidebar-section" id="model-section">
+    <div class="sidebar-section-header open">LLM Model</div>
+    <div class="sidebar-section-body open" id="model-section-body">
+      <div style="font-size:12px;color:var(--text-dim)">Loading…</div>
+    </div>
+  </div>
   <div class="sidebar-section" id="mcp-section">
     <div class="sidebar-section-header open" id="mcp-section-toggle">MCP Servers</div>
     <div class="sidebar-section-body open" id="mcp-section-body">
@@ -1074,6 +1080,18 @@
   fetch('/config').then(r => r.json()).then(data => {
     const mcpBody = document.getElementById('mcp-section-body');
     const loopBody = document.getElementById('loop-section-body');
+
+    // LLM Model
+    const modelBody = document.getElementById('model-section-body');
+    const model = data.model || {};
+    const modelCard = document.createElement('div');
+    modelCard.className = 'config-card';
+    modelCard.innerHTML = `
+      <div class="config-label"><span class="config-status-dot active"></span>${esc(model.model || 'unknown')}</div>
+      <div class="config-row"><span class="config-key">Provider</span><span class="config-val">${esc(model['class'] || 'unknown')}</span></div>
+      ${model.base_url ? '<div class="config-row"><span class="config-key">Endpoint</span><span class="config-val">' + esc(model.base_url) + '</span></div>' : ''}`;
+    modelBody.textContent = '';
+    modelBody.appendChild(modelCard);
 
     // MCP Servers — all values escaped via esc()
     const servers = data.mcp_servers || [];

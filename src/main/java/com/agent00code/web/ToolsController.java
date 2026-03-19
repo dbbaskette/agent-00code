@@ -4,6 +4,7 @@ import com.agent00code.config.AgentConfig;
 import com.agent00code.loop.ScheduledLoopRunner;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
+import org.springframework.ai.chat.model.ChatModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -28,15 +29,17 @@ public class ToolsController {
     private final ScheduledLoopRunner loopRunner;
     private final ChatClient.Builder chatClientBuilder;
     private final ToolCallbackProvider mcpToolCallbackProvider;
+    private final ChatModel chatModel;
 
     public ToolsController(List<McpSyncClient> mcpSyncClients, AgentConfig agentConfig,
                            ScheduledLoopRunner loopRunner, ChatClient.Builder chatClientBuilder,
-                           ToolCallbackProvider mcpToolCallbackProvider) {
+                           ToolCallbackProvider mcpToolCallbackProvider, ChatModel chatModel) {
         this.mcpSyncClients = mcpSyncClients;
         this.agentConfig = agentConfig;
         this.loopRunner = loopRunner;
         this.chatClientBuilder = chatClientBuilder;
         this.mcpToolCallbackProvider = mcpToolCallbackProvider;
+        this.chatModel = chatModel;
     }
 
     @GetMapping("/personality")
@@ -94,6 +97,20 @@ public class ToolsController {
         loopMap.put("initial_prompt", loop.initialPrompt());
         loopMap.put("loop_interval_seconds", loop.loopIntervalSeconds());
         result.put("loop", loopMap);
+
+        // Model info
+        Map<String, Object> modelMap = new LinkedHashMap<>();
+        modelMap.put("class", chatModel.getClass().getSimpleName());
+        String modelName = System.getProperty("spring.ai.openai.chat.options.model", "");
+        if (modelName.isEmpty()) {
+            modelName = System.getenv("LLM_MODEL") != null ? System.getenv("LLM_MODEL") : "default";
+        }
+        modelMap.put("model", modelName);
+        String baseUrl = System.getProperty("spring.ai.openai.base-url", "");
+        if (!baseUrl.isEmpty()) {
+            modelMap.put("base_url", baseUrl);
+        }
+        result.put("model", modelMap);
 
         return result;
     }

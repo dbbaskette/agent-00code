@@ -34,17 +34,20 @@ public class AgentLoop {
     private final ToolCallbackProvider mcpToolCallbackProvider;
     private final ToolCallback[] additionalTools;
     private final ToolSearcher toolSearcher;
+    private final com.agent00code.tools.ScanProgressTool scanProgressTool;
 
     public AgentLoop(ChatClient.Builder chatClientBuilder,
                      ChatModel chatModel,
                      ToolCallbackProvider mcpToolCallbackProvider,
                      List<ToolCallback> toolCallbacks,
-                     ToolSearcher toolSearcher) {
+                     ToolSearcher toolSearcher,
+                     com.agent00code.tools.ScanProgressTool scanProgressTool) {
         this.chatClientBuilder = chatClientBuilder;
         this.chatModel = chatModel;
         this.mcpToolCallbackProvider = mcpToolCallbackProvider;
         this.additionalTools = toolCallbacks != null ? toolCallbacks.toArray(new ToolCallback[0]) : new ToolCallback[0];
         this.toolSearcher = toolSearcher;
+        this.scanProgressTool = scanProgressTool;
     }
 
     public LoopResult run(String systemPrompt,
@@ -73,6 +76,7 @@ public class AgentLoop {
 
         var clientBuilder = ChatClient.builder(chatModel)
                 .defaultSystem(systemPrompt)
+                .defaultTools(scanProgressTool)
                 .defaultAdvisors(new EventEmittingAdvisor(eventQueue));
 
         if (allTools.length > 0) {
@@ -97,12 +101,13 @@ public class AgentLoop {
             try {
                 String prompt;
                 if (iteration == 1) {
+                    // Reset progress tracker for a fresh run
+                    scanProgressTool.resetProgress();
                     prompt = userPrompt;
                 } else {
-                    prompt = "You previously completed this work:\n" + completedWork +
-                            "\n\nContinue with the NEXT org that has NOT been scanned yet. " +
-                            "Do NOT repeat orgs already done. Do NOT ask for confirmation. " +
-                            "Call the next tool immediately.";
+                    prompt = "Call getProgress to see which orgs are done, then continue " +
+                            "with the next unscanned org. Do NOT re-scan completed orgs. " +
+                            "After scanning an org and writing to Sheets, call markOrgComplete.";
                 }
 
                 log.info("Sending prompt to LLM (iteration {})...", iteration);

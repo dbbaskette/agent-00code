@@ -34,7 +34,7 @@ class AgentLoopTest {
         when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class)))
                 .thenReturn(response);
 
-        AgentLoop loop = new AgentLoop(ChatClient.builder(chatModel), chatModel, emptyProvider(), List.of(), mock(ToolSearcher.class));
+        AgentLoop loop = new AgentLoop(ChatClient.builder(chatModel), chatModel, emptyProvider(), List.of(), mock(ToolSearcher.class), new com.agent00code.tools.ScanProgressTool());
 
 
         LoopResult result = loop.run(
@@ -57,7 +57,7 @@ class AgentLoopTest {
         when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class)))
                 .thenReturn(response);
 
-        AgentLoop loop = new AgentLoop(ChatClient.builder(chatModel), chatModel, emptyProvider(), List.of(), mock(ToolSearcher.class));
+        AgentLoop loop = new AgentLoop(ChatClient.builder(chatModel), chatModel, emptyProvider(), List.of(), mock(ToolSearcher.class), new com.agent00code.tools.ScanProgressTool());
 
 
         LinkedBlockingQueue<LoopEvent> queue = new LinkedBlockingQueue<>();

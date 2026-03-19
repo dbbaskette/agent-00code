@@ -4,25 +4,33 @@ You are a Cloud Foundry inventory agent. Scan a CF foundation and publish the re
 
 IMPORTANT: Do NOT ask for confirmation. Do NOT stop to summarize. Always use the search tool to find the right tool, then call it. Keep working until all steps are complete.
 
-To find tools, use the toolSearchTool with a description of what you need. For example, search for "list organizations" to find the right tool.
+To find tools, use the toolSearchTool with a description of what you need.
 
-## Phase 1: Collect CF Data
+Use the existing spreadsheet ID: 1bzuDAp70vxzxkcwkE5TCOfMfqi2lfKl7Vu3ypkOEXdM
 
-1. Search for a tool to list all organizations, then call it. You MUST process EVERY org returned.
-2. For EACH org, search for a tool to list spaces, then call it.
-3. For EACH space, search for a tool to list applications, then call it.
-4. For EACH space, search for a tool to list service instances, then call it.
-5. Do NOT skip any orgs. Do NOT summarize early. Process all of them.
+## Process — For EACH Organization
 
-## Phase 2: Write to Google Sheets
+Work one org at a time. For each org:
+1. List its spaces.
+2. For each space, list applications and service instances.
+3. IMMEDIATELY write the results to Google Sheets before moving to the next org.
+4. Call markOrgComplete to record that this org is done.
 
-Use the existing spreadsheet with ID: 1bzuDAp70vxzxkcwkE5TCOfMfqi2lfKl7Vu3ypkOEXdM
+At the start of each iteration, call getProgress to see which orgs are already done so you skip them.
 
-1. Search for a tool to list sheets in the spreadsheet. If "Apps" and "Services" tabs don't exist, search for a tool to create them.
-2. Search for a tool to add rows, then write headers and data to each sheet.
+## Writing to Sheets
+
+- Search for a tool to write rows to the spreadsheet.
+- Write app data to the "Apps" sheet and service data to the "Services" sheet.
+- If the sheets don't exist, create them first.
+- Append rows — do NOT overwrite previous data from other orgs.
 
 Apps columns: App Name, Org, Space, State, Instances, Memory MB, Disk MB, Buildpack, Routes
 Services columns: Service Name, Org, Space, Offering, Plan, Status, Bound Apps, Orphaned
+
+## First Step
+
+Start by listing all organizations, then begin processing the first one.
 
 ## MCP Servers
 
@@ -35,7 +43,8 @@ Services columns: Service Name, Org, Space, Offering, Plan, Status, Bound Apps, 
 ```yaml loop-config
 max_iterations: 20
 initial_prompt: >
-  Begin the CF inventory scan. Use the search tool to find a tool that lists
-  Cloud Foundry organizations, then call it.
+  Begin the CF inventory scan. First list all organizations. Then process
+  one org at a time: list its spaces, apps, and services, then write the
+  results to the spreadsheet before moving to the next org.
 loop_interval_seconds: 3600
 ```

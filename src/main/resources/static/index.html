@@ -678,6 +678,9 @@
   <div class="tab-panel" id="panel-runs">
     <div id="runs-header">
       <h1>Scheduled Runs</h1>
+      <label style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="schedule-toggle"> Auto-schedule
+      </label>
       <button id="run-now-btn">Run Now</button>
     </div>
     <div class="messages-area" id="runs-messages">
@@ -1020,6 +1023,19 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+
+  // ── Schedule toggle ────────────────────────────────────────────────────
+  const scheduleToggle = document.getElementById('schedule-toggle');
+  fetch('/schedule').then(r => r.json()).then(data => {
+    scheduleToggle.checked = data.enabled;
+  }).catch(() => {});
+  scheduleToggle.addEventListener('change', () => {
+    fetch('/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: scheduleToggle.checked })
+    }).catch(() => { scheduleToggle.checked = !scheduleToggle.checked; });
+  });
 
   // ── Run Now button ─────────────────────────────────────────────────────
   const runNowBtn = document.getElementById('run-now-btn');

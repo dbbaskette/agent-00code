@@ -34,6 +34,7 @@ public class ScheduledLoopRunner {
     });
 
     private volatile int runCount = 0;
+    private volatile boolean scheduledEnabled = false;
 
     public ScheduledLoopRunner(AgentLoop agentLoop,
                                AgentConfig agentConfig,
@@ -53,14 +54,12 @@ public class ScheduledLoopRunner {
             return;
         }
 
-        log.info("Background scheduled loop starting (interval={}s)", intervalSeconds);
+        log.info("Background scheduled loop configured (interval={}s, enabled={})", intervalSeconds, scheduledEnabled);
 
-        // Run immediately, then schedule repeats if interval > 0
-        scheduler.submit(this::executeRun);
-
+        // Don't run immediately — wait for schedule or manual trigger
         if (intervalSeconds > 0) {
             scheduler.scheduleWithFixedDelay(
-                    this::executeRun,
+                    () -> { if (scheduledEnabled) executeRun(); },
                     intervalSeconds,
                     intervalSeconds,
                     TimeUnit.SECONDS
@@ -71,6 +70,15 @@ public class ScheduledLoopRunner {
     @PreDestroy
     public void stop() {
         scheduler.shutdownNow();
+    }
+
+    public boolean isScheduledEnabled() {
+        return scheduledEnabled;
+    }
+
+    public void setScheduledEnabled(boolean enabled) {
+        this.scheduledEnabled = enabled;
+        log.info("Scheduled runs {}", enabled ? "ENABLED" : "DISABLED");
     }
 
     public void addSubscriber(BlockingQueue<LoopEvent> queue) {

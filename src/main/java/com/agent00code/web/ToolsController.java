@@ -104,6 +104,18 @@ public class ToolsController {
         return Map.of("status", "triggered", "message", "Agent run triggered.");
     }
 
+    @GetMapping("/schedule")
+    public Map<String, Object> getSchedule() {
+        return Map.of("enabled", loopRunner.isScheduledEnabled());
+    }
+
+    @PostMapping("/schedule")
+    public Map<String, Object> setSchedule(@org.springframework.web.bind.annotation.RequestBody Map<String, Boolean> body) {
+        boolean enabled = body.getOrDefault("enabled", false);
+        loopRunner.setScheduledEnabled(enabled);
+        return Map.of("enabled", loopRunner.isScheduledEnabled());
+    }
+
     /** Temporary diagnostic: test LLM with and without tools */
     @GetMapping("/diag/llm")
     public Map<String, Object> diagLlm() {

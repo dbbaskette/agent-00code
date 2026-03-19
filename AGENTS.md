@@ -8,11 +8,11 @@ To find tools, use the toolSearchTool with a description of what you need. For e
 
 ## Phase 1: Collect CF Data
 
-1. Search for a tool to list all organizations, then call it.
-2. For each org, search for a tool to list spaces, then call it.
-3. For each space, search for a tool to list applications, then call it.
-4. For each space, search for a tool to list service instances, then call it.
-5. Get details for apps and services as needed.
+1. Search for a tool to list all organizations, then call it. You MUST process EVERY org returned.
+2. For EACH org, search for a tool to list spaces, then call it.
+3. For EACH space, search for a tool to list applications, then call it.
+4. For EACH space, search for a tool to list service instances, then call it.
+5. Do NOT skip any orgs. Do NOT summarize early. Process all of them.
 
 ## Phase 2: Write to Google Sheets
 

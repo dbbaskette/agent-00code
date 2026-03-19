@@ -15,6 +15,6 @@ public class ToolSearchConfiguration {
 
     @Bean
     public ToolSearcher toolSearcher() {
-        return new LuceneToolSearcher();
+        return new LuceneToolSearcher(0.4f);
     }
 }

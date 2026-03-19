@@ -29,15 +29,18 @@ public class AgentLoop {
 
     private static final Logger log = LoggerFactory.getLogger(AgentLoop.class);
 
+    private final ChatClient.Builder chatClientBuilder;
     private final ChatModel chatModel;
     private final ToolCallbackProvider mcpToolCallbackProvider;
     private final ToolCallback[] additionalTools;
     private final ToolSearcher toolSearcher;
 
-    public AgentLoop(ChatModel chatModel,
+    public AgentLoop(ChatClient.Builder chatClientBuilder,
+                     ChatModel chatModel,
                      ToolCallbackProvider mcpToolCallbackProvider,
                      List<ToolCallback> toolCallbacks,
                      ToolSearcher toolSearcher) {
+        this.chatClientBuilder = chatClientBuilder;
         this.chatModel = chatModel;
         this.mcpToolCallbackProvider = mcpToolCallbackProvider;
         this.additionalTools = toolCallbacks != null ? toolCallbacks.toArray(new ToolCallback[0]) : new ToolCallback[0];
@@ -56,21 +59,20 @@ public class AgentLoop {
         log.info("Starting loop with {} tool(s) ({} MCP + {} additional), max_iterations={}",
                 totalTools, mcpTools.length, additionalTools.length, maxIterations);
 
-        // Build a FRESH ChatClient from the ChatModel directly — not the auto-configured
-        // builder which has tools pre-loaded and would cause duplicates.
-        // Pattern from: https://spring.io/blog/2025/12/11/spring-ai-tool-search-tools-tzolov
-        var advisor = ToolSearchToolCallAdvisor.builder()
-                .toolSearcher(toolSearcher)
-                .build();
-
         // Combine all tools
         ToolCallback[] allTools = new ToolCallback[mcpTools.length + additionalTools.length];
         System.arraycopy(mcpTools, 0, allTools, 0, mcpTools.length);
         System.arraycopy(additionalTools, 0, allTools, mcpTools.length, additionalTools.length);
 
-        // Register tools via defaultToolCallbacks + advisor handles search/discovery
+        // Build fresh ChatClient with tools + ToolSearchToolCallAdvisor + event emitting
+        var advisor = ToolSearchToolCallAdvisor.builder()
+                .toolSearcher(toolSearcher)
+                .referenceToolNameAccumulation(false)
+                .build();
+
         var clientBuilder = ChatClient.builder(chatModel)
-                .defaultSystem(systemPrompt);
+                .defaultSystem(systemPrompt)
+                .defaultAdvisors(new EventEmittingAdvisor(eventQueue));
 
         if (allTools.length > 0) {
             clientBuilder.defaultToolCallbacks(allTools)
@@ -89,11 +91,19 @@ public class AgentLoop {
             log.info("Iteration {}/{}", iteration, maxIterations);
 
             try {
-                ChatResponse response = chatClient.prompt()
-                        .user(iteration == 1 ? userPrompt :
-                                "Continue working on the task. If done, provide your final answer.")
-                        .call()
-                        .chatResponse();
+                log.info("Sending prompt to LLM (advisor will handle tool search + execution)...");
+                ChatResponse response;
+                try {
+                    response = chatClient.prompt()
+                            .user(iteration == 1 ? userPrompt :
+                                    "Continue working on the task. If done, provide your final answer.")
+                            .call()
+                            .chatResponse();
+                } catch (Exception inner) {
+                    log.error("Inner call failed: {} — {}", inner.getClass().getSimpleName(), inner.getMessage());
+                    throw inner;
+                }
+                log.info("LLM call returned");
 
                 if (response == null || response.getResults().isEmpty()) {
                     emit(events, eventQueue, new LoopEvent(

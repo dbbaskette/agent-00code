@@ -68,6 +68,7 @@ public class AgentLoop {
         var advisor = ToolSearchToolCallAdvisor.builder()
                 .toolSearcher(toolSearcher)
                 .referenceToolNameAccumulation(false)
+                .maxResults(3)
                 .build();
 
         var clientBuilder = ChatClient.builder(chatModel)
@@ -96,7 +97,7 @@ public class AgentLoop {
                 try {
                     response = chatClient.prompt()
                             .user(iteration == 1 ? userPrompt :
-                                    "Continue working on the task. If done, provide your final answer.")
+                                    "Continue immediately. Call the next tool now. Do not ask for confirmation.")
                             .call()
                             .chatResponse();
                 } catch (Exception inner) {

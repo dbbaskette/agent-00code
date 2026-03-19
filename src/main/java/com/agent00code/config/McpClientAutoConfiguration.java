@@ -72,7 +72,10 @@ public class McpClientAutoConfiguration {
             if (deduped.size() < all.length) {
                 log.info("Deduplicated MCP tools: {} -> {} unique", all.length, deduped.size());
             }
-            return deduped.values().toArray(new ToolCallback[0]);
+            // Sanitize schemas: strip "default" fields that break Gemini SDK
+            return deduped.values().stream()
+                    .map(SanitizedToolCallback::new)
+                    .toArray(ToolCallback[]::new);
         };
     }
 

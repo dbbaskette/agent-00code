@@ -105,8 +105,8 @@ public class AgentLoop {
                     scanProgressTool.resetProgress();
                     prompt = userPrompt;
                 } else {
-                    prompt = "Call getProgress to see which orgs are done, then continue " +
-                            "with the next unscanned org. Do NOT re-scan completed orgs. " +
+                    prompt = "Continue scanning orgs. Call getProgress to see which orgs " +
+                            "you already finished in this run so you can pick up where you left off. " +
                             "After scanning an org and writing to Sheets, call markOrgComplete.";
                 }
 
@@ -168,19 +168,51 @@ public class AgentLoop {
                 });
 
             } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage() : "";
+                boolean isContextLimit = msg.contains("400") && msg.contains("runtime_error");
+                boolean isMcpError = msg.contains("Tool execution failed") || msg.contains("chunked transfer");
+
+                if (isContextLimit) {
+                    // Context window full — rebuild ChatClient for a fresh conversation
+                    log.warn("Context limit hit in iteration {}. Rebuilding client for fresh conversation.", iteration);
+                    emit(events, eventQueue, new LoopEvent(
+                            EventType.THOUGHT,
+                            Map.of("text", "Context limit reached. Starting fresh conversation and resuming from progress checkpoint."),
+                            iteration));
+
+                    // Rebuild the ChatClient (fresh advisor state, clean context)
+                    advisor = ToolSearchToolCallAdvisor.builder()
+                            .toolSearcher(toolSearcher)
+                            .referenceToolNameAccumulation(true)
+                            .maxResults(5)
+                            .build();
+                    clientBuilder = ChatClient.builder(chatModel)
+                            .defaultSystem(systemPrompt)
+                            .defaultTools(scanProgressTool)
+                            .defaultAdvisors(new EventEmittingAdvisor(eventQueue));
+                    if (allTools.length > 0) {
+                        clientBuilder.defaultToolCallbacks(allTools)
+                                .defaultAdvisors(advisor);
+                    }
+                    chatClient = clientBuilder.build();
+
+                    consecutiveErrors = 0; // reset — this is a fresh start, not a repeated failure
+                    continue;
+                }
+
                 consecutiveErrors++;
-                log.error("Error in iteration {} (consecutive: {}): {}", iteration, consecutiveErrors, e.getMessage(), e);
+                log.error("Error in iteration {} (consecutive: {}): {}", iteration, consecutiveErrors, msg, e);
                 emit(events, eventQueue, new LoopEvent(
                         EventType.ERROR,
-                        Map.of("error", e.getMessage()),
+                        Map.of("error", msg),
                         iteration));
                 if (consecutiveErrors >= 3) {
                     log.error("Aborting after {} consecutive errors", consecutiveErrors);
                     emit(events, eventQueue, new LoopEvent(
                             EventType.FINAL_ANSWER,
-                            Map.of("text", "Aborted after " + consecutiveErrors + " consecutive errors: " + e.getMessage()),
+                            Map.of("text", "Aborted after " + consecutiveErrors + " consecutive errors: " + msg),
                             iteration));
-                    return new LoopResult("Aborted: " + e.getMessage(), iteration, events);
+                    return new LoopResult("Aborted: " + msg, iteration, events);
                 }
                 log.info("Retrying on next iteration...");
                 continue;

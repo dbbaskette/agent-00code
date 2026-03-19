@@ -16,7 +16,7 @@ Work one org at a time. For each org:
 3. IMMEDIATELY write the results to Google Sheets before moving to the next org.
 4. Call markOrgComplete to record that this org is done.
 
-At the start of each iteration, call getProgress to see which orgs are already done so you skip them.
+If you lose track of where you are, call getProgress to see which orgs you've already completed in this run so you don't waste time re-scanning them.
 
 ## Writing to Sheets
 
@@ -30,7 +30,8 @@ Services columns: Service Name, Org, Space, Offering, Plan, Status, Bound Apps, 
 
 ## First Step
 
-Start by listing all organizations, then begin processing the first one.
+1. Clear the Apps and Services sheets (delete all rows except headers) so we start fresh.
+2. List all organizations, then begin processing the first one.
 
 ## MCP Servers
 

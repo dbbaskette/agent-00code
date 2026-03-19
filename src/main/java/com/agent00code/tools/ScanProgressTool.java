@@ -16,23 +16,15 @@ import java.util.Set;
 public class ScanProgressTool {
 
     private final Set<String> completedOrgs = new LinkedHashSet<>();
-    private final Set<String> completedSpaces = new LinkedHashSet<>();
 
-    @Tool(description = "Get the list of CF organizations and spaces already scanned. Call this at the start of each iteration to know what to skip.")
+    @Tool(description = "Get the list of CF organizations already scanned in this run. Call this to know where to resume. IMPORTANT: After you finish scanning an org and writing its data to Sheets, call markOrgComplete with the org name.")
     public String getProgress() {
-        if (completedOrgs.isEmpty() && completedSpaces.isEmpty()) {
-            return "No orgs or spaces scanned yet. Start from the beginning.";
+        if (completedOrgs.isEmpty()) {
+            return "No orgs scanned yet. Start from the beginning. Remember to call markOrgComplete after each org.";
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("Completed orgs (").append(completedOrgs.size()).append("): ");
-        sb.append(String.join(", ", completedOrgs));
-        sb.append("\nCompleted spaces (").append(completedSpaces.size()).append("): ");
-        if (completedSpaces.size() > 20) {
-            sb.append(completedSpaces.size()).append(" total");
-        } else {
-            sb.append(String.join(", ", completedSpaces));
-        }
-        return sb.toString();
+        return "Completed orgs (" + completedOrgs.size() + "): " +
+                String.join(", ", completedOrgs) +
+                "\nSkip these and continue with the next org. Call markOrgComplete when done with each org.";
     }
 
     @Tool(description = "Mark a CF organization as fully scanned (all its spaces, apps, and services have been collected and written to Sheets). Call this after writing an org's data to the spreadsheet.")
@@ -42,17 +34,9 @@ public class ScanProgressTool {
         return "Marked org '" + orgName + "' as complete. " + completedOrgs.size() + " orgs done so far.";
     }
 
-    @Tool(description = "Mark a CF space as scanned. Call this after scanning apps and services in a space.")
-    public String markSpaceComplete(
-            @ToolParam(description = "The org/space identifier, e.g. 'system/system'") String orgSpace) {
-        completedSpaces.add(orgSpace);
-        return "Marked space '" + orgSpace + "' as complete.";
-    }
-
     @Tool(description = "Reset the scan progress. Call this to start a fresh scan from scratch.")
     public String resetProgress() {
         completedOrgs.clear();
-        completedSpaces.clear();
-        return "Progress reset. All orgs and spaces cleared.";
+        return "Progress reset. All orgs cleared.";
     }
 }
